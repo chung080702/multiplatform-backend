@@ -5,6 +5,9 @@ import compression from "compression";
 import morgan from "morgan";
 import logger from "./logger.js";
 import mongoose from "mongoose";
+import { AuthenRoutes } from "./routes/authenRoute.js";
+import { ProfileRoutes } from "./routes/profileRoute.js";
+import { getFile } from "./controllers/imageController.js";
 
 
 dotenv.config();
@@ -20,7 +23,9 @@ class Server {
   }
 
   public routes(): void {
-
+    this.app.use("/auth", new AuthenRoutes().router);
+    this.app.use("/profile", new ProfileRoutes().router);
+    this.app.use("/file", getFile);
   }
 
   public config(): void {
@@ -35,7 +40,7 @@ class Server {
     );
     this.app.use(compression());
     this.app.use(cors());
-
+    this.app.use('/uploads', express.static('uploads'));
     const myStream = {
       write: (text: any) => {
         logger.info(text);
@@ -92,3 +97,4 @@ async function startServer(): Promise<void> {
 }
 
 startServer();
+

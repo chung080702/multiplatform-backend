@@ -10,6 +10,7 @@
     "mongoose": "^7.5.3",
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
+    "rimraf": "^5.0.5",
     "winston": "^3.10.0"
   },
   "devDependencies": {
@@ -25,7 +26,9 @@
     "typescript": "^5.2.2"
   },
   "scripts": {
-    "start:dev": "npx nodemon",
-    "boostrap": "ts-node ./src/boostrap"
+    "start": "npx nodemon",
+    "boostrap": "ts-node ./src/boostrap",
+    "predeploy": "rimraf dist && tsc",
+    "deploy": "vercel deploy --prod"
   }
 }

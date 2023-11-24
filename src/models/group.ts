@@ -1,10 +1,13 @@
-import { Schema, model } from "mongoose";
+import { Schema, Types, model } from "mongoose";
 
 export const Group = model("Group", new Schema({
-    _id: String,
+    _id: {
+        type: String,
+        default: () => new Types.ObjectId().toHexString()
+    },
     name: String,
     description: String,
     create: { type: Date, default: Date.now },
-    imageUrl: String
+    imageId: String
 }))
 

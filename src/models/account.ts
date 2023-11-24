@@ -1,7 +1,10 @@
-import { Schema, model } from "mongoose";
+import { Schema, model, Types } from "mongoose";
 
 export const Account = model("Account", new Schema({
-    _id: String,
+    _id: {
+        type: String,
+        default: () => new Types.ObjectId().toHexString()
+    },
     password: String,
     fullName: String,
     telephone: String,
@@ -10,7 +13,7 @@ export const Account = model("Account", new Schema({
         type: String,
         enum: ["admin", "member"]
     },
-    imageUrl: String
+    imageId: String
 }));
 
 

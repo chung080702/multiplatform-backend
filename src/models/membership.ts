@@ -1,7 +1,10 @@
-import { Schema, model } from "mongoose";
+import { Schema, Types, model } from "mongoose";
 
 export const Membership = model("Membership", new Schema({
-    _id: String,
+    _id: {
+        type: String,
+        default: () => new Types.ObjectId().toHexString()
+    },
     accountId: String,
     groupId: String,
     role: {

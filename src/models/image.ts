@@ -1,11 +1,14 @@
 import { Schema, Types, model } from "mongoose";
 
-export const Notification = model("Notification", new Schema({
+export const Image = model("Image", new Schema({
     _id: {
         type: String,
         default: () => new Types.ObjectId().toHexString()
     },
-    accountId: String,
-    content: String,
-    url: String
-}))
+    data: Buffer,
+    contentType: { type: String, required: true }
+}));
+
+
+
+

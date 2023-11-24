@@ -1,7 +1,10 @@
-import { Schema, model } from "mongoose";
+import { Schema, Types, model } from "mongoose";
 
 export const Event = model("Event", new Schema({
-    _id: String,
+    _id: {
+        type: String,
+        default: () => new Types.ObjectId().toHexString()
+    },
     supportRequestId: String,
     name: String,
     start: Date,
@@ -12,5 +15,5 @@ export const Event = model("Event", new Schema({
         type: String,
         enum: ["pending", "accept", "reject"]
     },
-    imageUrls: [String]
+    imageIds: [String]
 }));

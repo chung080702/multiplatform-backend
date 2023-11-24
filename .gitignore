@@ -132,3 +132,4 @@ package-lock.json
 crs
 
 *.png
+.vercel

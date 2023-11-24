@@ -1,7 +1,10 @@
-import { Schema, model } from "mongoose";
+import { Schema, Types, model } from "mongoose";
 
 export const SupportRequest = model("SupportRequest", new Schema({
-    _id: String,
+    _id: {
+        type: String,
+        default: () => new Types.ObjectId().toHexString()
+    },
     accountId: String,
     create: { type: Date, default: Date.now },
     status: {
@@ -10,6 +13,6 @@ export const SupportRequest = model("SupportRequest", new Schema({
     },
     title: String,
     description: String,
-    imageUrls: [String]
+    imageIds: [String]
 }));
 

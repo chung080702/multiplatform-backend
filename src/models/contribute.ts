@@ -1,7 +1,10 @@
-import { Schema, model } from "mongoose";
+import { Schema, Types, model } from "mongoose";
 
 export const GroupContribute = model("Group Contribute", new Schema({
-    _id: String,
+    _id: {
+        type: String,
+        default: () => new Types.ObjectId().toHexString()
+    },
     eventId: String,
     groupId: String,
     accountId: String,
@@ -9,17 +12,20 @@ export const GroupContribute = model("Group Contribute", new Schema({
         type: String,
         enum: ["pending", "accept", "reject"]
     },
-    imageUrls: [String]
+    imageIds: [String]
 }))
 
 export const PersonalContribute = model("Personal Contribute", new Schema({
-    _id: String,
+    _id: {
+        type: String,
+        default: () => new Types.ObjectId().toHexString()
+    },
     supportRequestId: String,
     accountId: String,
     status: {
         type: String,
         enum: ["pending", "accept", "reject"]
     },
-    imageUrls: [String]
+    imageIds: [String]
 }))
 

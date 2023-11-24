@@ -1,28 +1,26 @@
 import { NextFunction, Request, Response } from "express";
-import multer from "multer"
 import logger from "../logger.js";
-import path from "path";
-const rootPath = path.resolve(process.cwd());
 
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, "uploads/");
-    },
-    filename: function (req, file, cb) {
-        cb(null, Date.now() + '-' + file.originalname);
-    }
-});
+import multer from "multer";
+import { Image } from "../models/image.js";
 
-const upload = multer({ storage: storage });
+const upload = multer();
 
-export async function uploadFiles(req: Request, res: Response, next: NextFunction) {
+export async function uploadFile(req: Request, res: Response, next: NextFunction) {
     try {
-        upload.array("image")(req, res, (err) => {
+        upload.single("image")(req, res, async (err) => {
             if (err) throw new Error(err);
-            if (Array.isArray(req.files))
-                req.body.imageUrls = req.files.map((e: any) => e.path)
-            next()
+            if (req.file != null) {
+                const newImage = new Image({
+                    data: req.file.buffer,
+                    contentType: req.file.mimetype,
+                });
+                await newImage.save();
+                req.body.imageId = newImage._id;
+            }
+            next();
         })
+
     }
     catch (e: any) {
         logger.error(e);
@@ -30,13 +28,28 @@ export async function uploadFiles(req: Request, res: Response, next: NextFunctio
     }
 }
 
-export async function uploadFile(req: Request, res: Response, next: NextFunction) {
+export async function uploadFiles(req: Request, res: Response, next: NextFunction) {
     try {
-        upload.single("image")(req, res, (err) => {
+        upload.array("image")(req, res, async (err) => {
             if (err) throw new Error(err);
-            req.body.imageUrl = req.file?.path;
-            next()
+            let imageIds = [];
+            if (Array.isArray(req.files)) {
+                for (const file of req.files) {
+                    const newImage = new Image({
+                        data: file.buffer,
+                        contentType: file.mimetype
+                    });
+
+                    await newImage.save();
+                    imageIds.push(newImage._id)
+                }
+
+            }
+            req.body.imageIds = imageIds;
+            next();
         })
+
+
     }
     catch (e: any) {
         logger.error(e);
@@ -46,8 +59,11 @@ export async function uploadFile(req: Request, res: Response, next: NextFunction
 
 export async function getFile(req: Request, res: Response, next: NextFunction) {
     try {
-        let { imageUrl } = req.body;
-        res.sendFile(path.join(rootPath, imageUrl))
+        let { imageId } = req.body;
+        let image = await Image.findById(imageId);
+        if (image == null) throw new Error("Invalid image id");
+        res.contentType(image.contentType);
+        res.send(image.data)
     }
     catch (e: any) {
         logger.error(e);

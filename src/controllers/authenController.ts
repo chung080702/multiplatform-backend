@@ -17,7 +17,7 @@ export async function authenticateToken(req: Request, res: Response, next: NextF
             let username = null;
             if (typeof data == 'object')
                 username = data?.username;
-            if (username == null) throw new Error("Invalid token");
+            if (username == null) return res.status(400).send("Invalid token");
             if (err) return res.status(403).json({ message: 'Forbidden' });
             if (await Account.findById(username) == null)
                 throw new Error("username is not existed");
@@ -35,7 +35,6 @@ export async function authenticateToken(req: Request, res: Response, next: NextF
 export async function register(req: Request, res: Response) {
     try {
         let { username } = req.body;
-
         if (await Account.findById(username) != null)
             throw new Error("username is existed");
         let account = new Account({

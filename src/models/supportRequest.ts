@@ -1,18 +1,22 @@
 import { Schema, Types, model } from "mongoose";
 
-export const SupportRequest = model("SupportRequest", new Schema({
+const SupportRequestSchema = new Schema({
     _id: {
         type: String,
         default: () => new Types.ObjectId().toHexString()
     },
-    accountId: String,
-    create: { type: Date, default: Date.now },
+    accountId: { type: String, ref: 'Account', required: true },
+    createAt: { type: Date, default: Date.now },
     status: {
         type: String,
-        enum: ["pending", "reject", "active", "inactive"]
+        enum: ["Pending", "Rejected", "Active", "Inactive"]
     },
     title: String,
     description: String,
-    imageIds: [String]
-}));
+    imageIds: [{ type: String, ref: 'Image' }]
+});
+
+SupportRequestSchema.index({ status: 1, createAt: 1 })
+
+export const SupportRequest = model("Support Request", SupportRequestSchema);
 

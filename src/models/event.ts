@@ -1,11 +1,11 @@
 import { Schema, Types, model } from "mongoose";
 
-export const Event = model("Event", new Schema({
+const EventSchema = new Schema({
     _id: {
         type: String,
         default: () => new Types.ObjectId().toHexString()
     },
-    supportRequestId: String,
+    supportRequestId: { type: String, ref: 'Support Request' },
     name: String,
     start: Date,
     end: Date,
@@ -13,7 +13,11 @@ export const Event = model("Event", new Schema({
     description: String,
     status: {
         type: String,
-        enum: ["pending", "accept", "reject"]
+        enum: ["Pending", "Accepted", "Rejected"]
     },
-    imageIds: [String]
-}));
+    imageIds: [{ type: String, ref: 'Image' }]
+})
+
+EventSchema.index({ start: 1, end: 1 });
+
+export const Event = model("Event", EventSchema);

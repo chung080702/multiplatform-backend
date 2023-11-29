@@ -11,9 +11,9 @@ export const Account = model("Account", new Schema({
     email: String,
     role: {
         type: String,
-        enum: ["admin", "member"]
+        enum: ["Admin", "Member"]
     },
-    imageId: String
+    imageId: { type: String, ref: 'Image' }
 }));
 
 

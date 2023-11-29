@@ -19,16 +19,17 @@ export async function authenticateToken(req: Request, res: Response, next: NextF
                 username = data?.username;
             if (username == null) return res.status(400).send("Invalid token");
             if (err) return res.status(403).json({ message: 'Forbidden' });
-            if (await Account.findById(username) == null)
-                throw new Error("username is not existed");
+            let account = await Account.findById(username)
+            if (account == null)
+                throw new Error("Username is not existed");
             req.body.username = username;
-
+            req.body.accountRole = account.role;
             next();
         });
     }
     catch (e: any) {
         logger.error(e);
-        res.status(400).send(e);
+        res.status(400).send(e?.message);
     }
 }
 
@@ -36,12 +37,12 @@ export async function register(req: Request, res: Response) {
     try {
         let { username } = req.body;
         if (await Account.findById(username) != null)
-            throw new Error("username is existed");
+            throw new Error("Username is existed");
         let account = new Account({
             _id: username,
             ...req.body
         });
-
+        account.role = 'Member';
         await account.save();
 
         let resData = {}
@@ -51,7 +52,7 @@ export async function register(req: Request, res: Response) {
     }
     catch (e: any) {
         logger.error(e);
-        res.status(400).send(e);
+        res.status(400).send(e?.message);
     }
 }
 
@@ -65,7 +66,7 @@ export async function login(req: Request, res: Response) {
         if (account.password != password)
             throw new Error("wrong password");
 
-        const token = jwt.sign({ username }, secretKey, { expiresIn: '1m' });
+        const token = jwt.sign({ username }, secretKey, { expiresIn: '60d' });
 
         let resData = {
             token
@@ -77,7 +78,7 @@ export async function login(req: Request, res: Response) {
     }
     catch (e: any) {
         logger.error(e);
-        res.status(400).send(e);
+        res.status(400).send(e?.message);
     }
 }
 

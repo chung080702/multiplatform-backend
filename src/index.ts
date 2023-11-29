@@ -6,8 +6,10 @@ import morgan from "morgan";
 import logger from "./logger.js";
 import mongoose from "mongoose";
 import { AuthenRoutes } from "./routes/authenRoute.js";
-import { ProfileRoutes } from "./routes/profileRoute.js";
+import { AccountRoutes } from "./routes/accountRoute.js";
 import { getFile } from "./controllers/imageController.js";
+import { GroupRoutes } from "./routes/groupRoute.js";
+import { authenticateToken } from "./controllers/authenController.js";
 
 
 dotenv.config();
@@ -24,7 +26,11 @@ class Server {
 
   public routes(): void {
     this.app.use("/auth", new AuthenRoutes().router);
-    this.app.use("/profile", new ProfileRoutes().router);
+    this.app.post("*", authenticateToken);
+    this.app.put("*", authenticateToken);
+    this.app.delete("*", authenticateToken);
+    this.app.use("/account", new AccountRoutes().router);
+    this.app.use("/group", new GroupRoutes().router);
     this.app.use("/file", getFile);
   }
 

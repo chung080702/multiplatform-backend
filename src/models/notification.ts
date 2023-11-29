@@ -1,11 +1,16 @@
 import { Schema, Types, model } from "mongoose";
 
-export const Notification = model("Notification", new Schema({
+const NotificationSchema = new Schema({
     _id: {
         type: String,
         default: () => new Types.ObjectId().toHexString()
     },
-    accountId: String,
+    accountId: { type: String, ref: 'Account', required: true },
     content: String,
+    createAt: { type: Date, default: Date.now },
     url: String
-}))
+})
+
+NotificationSchema.index({ createAt: 1 });
+
+export const Notification = model("Notification", NotificationSchema)

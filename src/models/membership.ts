@@ -1,14 +1,19 @@
 import { Schema, Types, model } from "mongoose";
 
-export const Membership = model("Membership", new Schema({
+const MembershipSchema = new Schema({
     _id: {
         type: String,
         default: () => new Types.ObjectId().toHexString()
     },
-    accountId: String,
-    groupId: String,
+    accountId: { type: String, ref: 'Account', required: true },
+    groupId: { type: String, ref: 'Group', required: true },
     role: {
         type: String,
-        enum: ["admin", "member"]
-    }
-}))
+        enum: ["Admin", "Member"]
+    },
+    createAt: { type: Date, default: Date.now }
+})
+
+MembershipSchema.index({ groupId: 1, createAt: 1 });
+
+export const Membership = model("Membership", MembershipSchema)

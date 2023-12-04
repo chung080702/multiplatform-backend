@@ -10,6 +10,8 @@ import { AccountRoutes } from "./routes/accountRoute.js";
 import { getFile } from "./controllers/imageController.js";
 import { GroupRoutes } from "./routes/groupRoute.js";
 import { authenticateToken } from "./controllers/authenController.js";
+import { EventRoutes } from "./routes/eventRoute.js";
+import { SupportRequestRoutes } from "./routes/supportRequestRoute.js";
 
 
 dotenv.config();
@@ -31,6 +33,8 @@ class Server {
     this.app.delete("*", authenticateToken);
     this.app.use("/account", new AccountRoutes().router);
     this.app.use("/group", new GroupRoutes().router);
+    this.app.use("/supportRequest", new SupportRequestRoutes().router);
+    this.app.use("/event", new EventRoutes().router);
     this.app.use("/file", getFile);
   }
 

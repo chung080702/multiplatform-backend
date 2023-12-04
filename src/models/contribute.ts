@@ -6,7 +6,6 @@ const GroupContributeSchema = new Schema({
         default: () => new Types.ObjectId().toHexString()
     },
     eventId: { type: String, ref: 'Event', required: true },
-    groupId: { type: String, ref: 'Group', required: true },
     accountId: { type: String, ref: 'Account', required: true },
     createAt: { type: Date, default: Date.now },
     status: {
@@ -16,7 +15,7 @@ const GroupContributeSchema = new Schema({
     imageIds: [String]
 })
 
-GroupContributeSchema.index({ createAt: 1 });
+GroupContributeSchema.index({ createAt: 1, accountId: 1, eventId: 1 });
 
 export const GroupContribute = model("Group Contribute", GroupContributeSchema);
 
@@ -37,7 +36,7 @@ const PersonalContributeSchema = new Schema({
     imageIds: [String]
 })
 
-PersonalContributeSchema.index({ createAt: 1 });
+PersonalContributeSchema.index({ createAt: 1, accountId: 1, supportRequestId: 1 });
 
 export const PersonalContribute = model("Personal Contribute", PersonalContributeSchema)
 

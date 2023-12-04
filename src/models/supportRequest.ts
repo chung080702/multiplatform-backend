@@ -9,7 +9,7 @@ const SupportRequestSchema = new Schema({
     createAt: { type: Date, default: Date.now },
     status: {
         type: String,
-        enum: ["Pending", "Rejected", "Active", "Inactive"]
+        enum: ["Pending", "Rejected", "Accepted"]
     },
     title: String,
     description: String,

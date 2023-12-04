@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { uploadFile } from "../controllers/imageController.js";
-import { acceptJoinGroup, createGroup, deleteMember, getGroup, getGroups, getGroupsOfUser, getJoinGroupRequest, getJoinGroupRequestOfUser, getJoinGroupRequests, getMember, getMembers, joinGroup, rejectJoinGroup, updateGroup, updateMember } from "../controllers/groupController.js";
+import { uploadFile, uploadFiles } from "../controllers/imageController.js";
+import { acceptJoinGroup, createEvent, createGroup, deleteMember, getEventsOfGroup, getGroup, getGroups, getGroupsOfUser, getJoinGroupRequest, getJoinGroupRequestOfUser, getJoinGroupRequests, getMember, getMembers, joinGroup, rejectJoinGroup, updateEvent, updateGroup, updateMember } from "../controllers/groupController.js";
 import { authenticateToken } from "../controllers/authenController.js";
 
 
@@ -28,5 +28,8 @@ export class GroupRoutes {
         this.router.get("/:groupId/member/:memberId", getMember);
         this.router.delete("/:groupId/member/:memberId", deleteMember);
         this.router.put("/:groupId/member/:memberId", updateMember);
+        this.router.post("/:groupId/event", uploadFiles, authenticateToken, createEvent);
+        this.router.get("/:groupId/event/page/:pageNumber", getEventsOfGroup);
+        this.router.put("/:groupId/event/:eventId", uploadFiles, authenticateToken, updateEvent);
     }
 }

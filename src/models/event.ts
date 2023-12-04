@@ -6,11 +6,13 @@ const EventSchema = new Schema({
         default: () => new Types.ObjectId().toHexString()
     },
     supportRequestId: { type: String, ref: 'Support Request' },
+    groupId: { type: String, ref: 'Group', require: true },
     name: String,
     start: Date,
     end: Date,
     address: String,
     description: String,
+    content: String,
     status: {
         type: String,
         enum: ["Pending", "Accepted", "Rejected"]

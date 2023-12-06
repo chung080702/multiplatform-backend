@@ -35,9 +35,11 @@ export async function authenticateToken(req: Request, res: Response, next: NextF
 
 export async function register(req: Request, res: Response) {
     try {
-        let { username } = req.body;
+        let { username, password, rePassword } = req.body;
         if (await Account.findById(username) != null)
             throw new Error("Username is existed");
+        if (typeof password != 'string' && password != rePassword)
+            throw new Error("RePassword is not correct");
         let account = new Account({
             _id: username,
             ...req.body

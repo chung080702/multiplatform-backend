@@ -59,8 +59,8 @@ export async function uploadFiles(req: Request, res: Response, next: NextFunctio
 
 export async function getFile(req: Request, res: Response, next: NextFunction) {
     try {
-        let { imageId } = req.body;
-        let image = await Image.findById(imageId);
+        let { fileId } = req.params;
+        let image = await Image.findById(fileId);
         if (image == null) throw new Error("Invalid image id");
         res.contentType(image.contentType);
         res.send(image.data)

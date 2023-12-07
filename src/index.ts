@@ -35,7 +35,7 @@ class Server {
     this.app.use("/group", new GroupRoutes().router);
     this.app.use("/supportRequest", new SupportRequestRoutes().router);
     this.app.use("/event", new EventRoutes().router);
-    this.app.use("/file", getFile);
+    this.app.use("/file/:fileId", getFile);
   }
 
   public config(): void {

@@ -8,12 +8,11 @@ import { SupportRequest } from "../models/supportRequest.js";
 
 export async function getGroupsOfUser(req: Request, res: Response) {
     try {
-        let { pageNumber } = req.params;
-        let { username } = req.body;
+        let { pageNumber, accountId } = req.params;
         let perPage = 10;
         let skip = (Number(pageNumber) - 1) * perPage;
         let groups =
-            await Membership.find({ accountId: username }).sort({ createAt: 1 }).skip(skip)
+            await Membership.find({ accountId }).sort({ createAt: 1 }).skip(skip)
                 .limit(perPage).populate({ path: 'groupId', options: { as: 'group' } }).lean();
         let resData = {
             groups
@@ -250,6 +249,14 @@ export async function acceptJoinGroup(req: Request, res: Response) {
         })
         await membership.save();
 
+        let group = await Group.findById(groupId);
+
+        if (group == null) throw new Error("Group is not existed");
+
+        group.memberNumber = group.memberNumber + 1;
+
+        await group.save();
+
         let resData = {
         }
 
@@ -301,7 +308,16 @@ export async function deleteMember(req: Request, res: Response) {
 
         if (!await checkAdminGroup(username, groupId) || await checkAdminGroup(memberId, groupId)) throw new Error("Permission denied");
 
-        await Membership.deleteMany({ groupId, accountId: memberId });
+        await Membership.deleteOne({ groupId, accountId: memberId });
+
+        let group = await Group.findById(groupId);
+
+        if (group == null) throw new Error("Group is not existed");
+
+        group.memberNumber = group.memberNumber - 1;
+
+        await group.save();
+
 
         let resData = {
         }

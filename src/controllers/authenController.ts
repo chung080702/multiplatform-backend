@@ -38,7 +38,7 @@ export async function register(req: Request, res: Response) {
         let { username, password, rePassword } = req.body;
         if (await Account.findById(username) != null)
             throw new Error("Username is existed");
-        if (typeof password != 'string' && password != rePassword)
+        if (typeof password != 'string' || password != rePassword)
             throw new Error("RePassword is not correct");
         let account = new Account({
             _id: username,

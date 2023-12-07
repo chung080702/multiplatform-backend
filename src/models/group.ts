@@ -7,6 +7,7 @@ const GroupSchema = new Schema({
     },
     name: String,
     description: String,
+    memberNumber: { type: Number, default: 0 },
     createAt: { type: Date, default: Date.now },
     imageId: { type: String, ref: 'Image' }
 })

@@ -11,6 +11,10 @@ const MembershipSchema = new Schema({
         type: String,
         enum: ["Admin", "Member"]
     },
+    status: {
+        type: String,
+        enum: ["Pending", "Accepted", "Rejected"]
+    },
     createAt: { type: Date, default: Date.now }
 })
 

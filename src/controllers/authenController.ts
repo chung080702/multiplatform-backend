@@ -71,7 +71,8 @@ export async function login(req: Request, res: Response) {
         const token = jwt.sign({ username }, secretKey, { expiresIn: '60d' });
 
         let resData = {
-            token
+            token,
+            account
         }
         logger.info(resData);
 

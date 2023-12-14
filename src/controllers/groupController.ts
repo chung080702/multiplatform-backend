@@ -2,18 +2,18 @@ import { Request, Response } from "express";
 import logger from "../logger.js";
 import { Group } from "../models/group.js";
 import { Membership } from "../models/membership.js";
-import { JoinRequest } from "../models/joinRequest.js";
 import { Event } from "../models/event.js";
 import { SupportRequest } from "../models/supportRequest.js";
 
 export async function getGroupsOfUser(req: Request, res: Response) {
     try {
         let { pageNumber, accountId } = req.params;
+
         let perPage = 10;
         let skip = (Number(pageNumber) - 1) * perPage;
-        let groups =
-            await Membership.find({ accountId }).sort({ createAt: 1 }).skip(skip)
-                .limit(perPage).populate({ path: 'groupId', options: { as: 'group' } }).lean();
+        let groups = await Membership.find({ accountId }).sort({ createAt: 1 }).skip(skip)
+            .limit(perPage).populate({ path: 'groupId', options: { as: 'group' } }).lean();
+
         let resData = {
             groups
         }
@@ -131,16 +131,23 @@ export async function joinGroup(req: Request, res: Response) {
 
         if (group == null) throw new Error("Group is not existed");
 
-        if (await Membership.findOne({ accountId: username, groupId: group._id }) != null)
+        let membership = await Membership.findOne({ accountId: username, groupId: group._id });
+
+        if (membership?.status === 'Accepted')
             throw new Error("Group included member")
 
-        let joinRequest = new JoinRequest({
+
+        if (membership === null) membership = new Membership({
             accountId: username,
             groupId: group._id,
             status: "Pending"
-        });
+        })
 
-        await joinRequest.save();
+        membership.status = "Pending";
+
+        membership.createAt = new Date(Date.now());
+
+        await membership.save();
 
         let resData = {
         }
@@ -163,7 +170,7 @@ export async function getJoinGroupRequests(req: Request, res: Response) {
 
         if (!await checkAdminGroup(username, groupId)) throw new Error("Permission denied");
 
-        let joinRequests = await JoinRequest.find({ groupId: groupId, status: "Pending" }).sort({ createAt: 1 })
+        let joinRequests = await Membership.find({ groupId: groupId, status: "Pending" }).sort({ createAt: 1 })
             .skip(skip).limit(perPage).populate({ path: "accountId", select: "imageId", options: { as: 'account' } }).lean();
 
         let resData = {
@@ -184,7 +191,7 @@ export async function getJoinGroupRequestOfUser(req: Request, res: Response) {
         let { groupId } = req.params;
         let { username } = req.body;
 
-        let joinRequest = await JoinRequest.findOne({ groupId, accountId: username }).lean();
+        let joinRequest = await Membership.findOne({ groupId, accountId: username }).lean();
 
         if (joinRequest == null) throw new Error("Join request is not existed");
 
@@ -205,7 +212,7 @@ export async function getJoinGroupRequest(req: Request, res: Response) {
     try {
         let { joinRequestId } = req.params;
 
-        let joinRequest = await JoinRequest.findById(joinRequestId).lean();
+        let joinRequest = await Membership.findById(joinRequestId).lean();
 
         if (joinRequest == null) throw new Error("Join request is not existed");
 
@@ -228,7 +235,7 @@ export async function acceptJoinGroup(req: Request, res: Response) {
 
         let { joinRequestId } = req.params;
 
-        let joinRequest = await JoinRequest.findById(joinRequestId);
+        let joinRequest = await Membership.findById(joinRequestId);
 
         if (joinRequest == null) throw new Error("Join request is not existed");
 
@@ -238,16 +245,13 @@ export async function acceptJoinGroup(req: Request, res: Response) {
 
         if (!await checkAdminGroup(username, groupId)) throw new Error("Permission denied");
 
-        joinRequest.status = "Accepted"
+        joinRequest.status = "Accepted";
+
+        joinRequest.role = "Member";
+
+        joinRequest.createAt = new Date(Date.now());
 
         await joinRequest.save();
-
-        let membership = new Membership({
-            accountId: joinRequest.accountId,
-            groupId,
-            role: "Member"
-        })
-        await membership.save();
 
         let group = await Group.findById(groupId);
 
@@ -275,7 +279,7 @@ export async function rejectJoinGroup(req: Request, res: Response) {
         let { username } = req.body;
         let { joinRequestId } = req.params;
 
-        let joinRequest = await JoinRequest.findById(joinRequestId);
+        let joinRequest = await Membership.findById(joinRequestId);
 
         if (joinRequest == null) throw new Error("Join request is not existed");
 
@@ -286,6 +290,8 @@ export async function rejectJoinGroup(req: Request, res: Response) {
         if (!await checkAdminGroup(username, groupId)) throw new Error("Permission denied");
 
         joinRequest.status = "Rejected";
+
+        joinRequest.createAt = new Date(Date.now());
 
         await joinRequest.save();
 

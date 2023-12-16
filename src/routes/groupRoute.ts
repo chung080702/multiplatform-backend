@@ -16,7 +16,7 @@ export class GroupRoutes {
         this.router.post("/", uploadFile, authenticateToken, createGroup);
         this.router.put("/:groupId", uploadFile, authenticateToken, updateGroup);
         this.router.get("/:groupId", getGroup);
-        this.router.get("/page/:pageNumber", getGroups);
+        this.router.get("/page/:pageNumber", authenticateToken, getGroups);
         this.router.get("/user/:accountId/page/:pageNumber", getGroupsOfUser);
         this.router.post("/:groupId/join", joinGroup);
         this.router.put("/:groupId/join/:joinRequestId", acceptJoinGroup);

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { acceptPersonalContribute, acceptSupportRequest, createPersonalContribute, createSupportRequest, getPersonalContribute, getPersonalContributesOfSupportRequest, getSupportRequet, getSupportRequets, rejectPersonalContribute, rejectSupportRequest, updateSupportRequest } from "../controllers/supportRequestController.js";
+import { acceptPersonalContribute, acceptSupportRequest, createPersonalContribute, createSupportRequest, getPersonalContribute, getPersonalContributesOfSupportRequest, getSupportRequet, getSupportRequets, getSupportRequetsOfUser, rejectPersonalContribute, rejectSupportRequest, updateSupportRequest } from "../controllers/supportRequestController.js";
 import { authenticateToken } from "../controllers/authenController.js";
 import { uploadFiles } from "../controllers/imageController.js";
 
@@ -13,7 +13,8 @@ export class SupportRequestRoutes {
 
     routers(): void {
         this.router.post("/", uploadFiles, authenticateToken, createSupportRequest);
-        this.router.get("/page/:pageNumber", getSupportRequets);
+        this.router.get("/page/:pageNumber/search/:search?", getSupportRequets);
+        this.router.get("/account/:accountId/page/:pageNumber/search/:search?", getSupportRequetsOfUser);
         this.router.get("/:supportRequestId", getSupportRequet);
         this.router.put("/:supportRequestId", uploadFiles, authenticateToken, updateSupportRequest);
         this.router.post("/:supportRequestId", acceptSupportRequest);

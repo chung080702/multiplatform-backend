@@ -5,15 +5,14 @@ import { PersonalContribute } from "../models/contribute.js";
 
 export async function getSupportRequets(req: Request, res: Response) {
     try {
-        let { pageNumber } = req.params;
+        let { pageNumber, search = "" } = req.params;
         let { filter = ["Pending", "Accepted", "Rejected"] } = req.body;
-
         let perPage = 10;
         let skip = (Number(pageNumber) - 1) * perPage;
 
-        let supportRequests = await SupportRequest.find({ $or: filter.map((e: String) => { return { status: e } }) })
+        let supportRequests = await SupportRequest.find({ title: { $regex: search, $options: 'i' }, $or: filter.map((e: String) => { return { status: e } }) })
             .sort({ createAt: 1 }).skip(skip).limit(perPage)
-            .populate({ path: "accountId", select: "imageId", options: { as: 'account' } }).lean();
+            .populate("accountId").lean();
 
         let resData = {
             supportRequests
@@ -28,11 +27,37 @@ export async function getSupportRequets(req: Request, res: Response) {
     }
 }
 
+export async function getSupportRequetsOfUser(req: Request, res: Response) {
+    try {
+        let { accountId, pageNumber, search = "" } = req.params;
+        let { filter = ["Pending", "Accepted", "Rejected"] } = req.body;
+
+        let perPage = 10;
+        let skip = (Number(pageNumber) - 1) * perPage;
+
+        let supportRequests = await SupportRequest.find({ accountId, title: { $regex: search, $options: 'i' }, $or: filter.map((e: String) => { return { status: e } }) })
+            .sort({ createAt: 1 }).skip(skip).limit(perPage)
+            .populate("accountId").lean();
+
+        let resData = {
+            supportRequests
+        }
+        logger.info(resData);
+
+        res.status(200).send(resData);
+    }
+    catch (e: any) {
+        logger.error(e);
+        res.status(400).send(e?.message);
+    }
+}
+
+
 export async function getSupportRequet(req: Request, res: Response) {
     try {
         let { supportRequestId } = req.params;
         let supportRequest = await SupportRequest.findById(supportRequestId)
-            .populate({ path: "accountId", select: "imageId", options: { as: 'account' } }).lean();
+            .populate("accountId").lean();
 
         if (supportRequest == null) throw new Error("Support request is not existed")
         let resData = {
@@ -188,8 +213,8 @@ export async function getPersonalContributesOfSupportRequest(req: Request, res: 
 
         let groupContributes = await PersonalContribute.find({ supportRequestId, $or: filter.map((e: String) => { return { status: e } }) })
             .sort({ createAt: 1 }).skip(skip).limit(perPage)
-            .populate({ path: "accountId", select: "imageId", options: { as: 'account' } })
-            .populate({ path: "supportRequestId", select: "imageIds", options: { as: 'supportRequest' } })
+            .populate("accountId")
+            .populate("supportRequestId")
             .lean();
 
         let resData = {
@@ -209,8 +234,8 @@ export async function getPersonalContribute(req: Request, res: Response) {
     try {
         let { personalContributeId } = req.params;
         let personalContribute = await PersonalContribute.findById(personalContributeId)
-            .populate({ path: "accountId", select: "imageId", options: { as: 'account' } })
-            .populate({ path: "supportRequestId", select: "imageIds", options: { as: 'supportRequest' } })
+            .populate("accountId")
+            .populate("supportRequestId")
             .lean();
 
         if (personalContribute == null) throw new Error("personal contribute is not existed")

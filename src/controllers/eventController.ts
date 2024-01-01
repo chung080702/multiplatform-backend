@@ -6,13 +6,12 @@ import { GroupContribute } from "../models/contribute.js";
 
 export async function getEvents(req: Request, res: Response) {
     try {
-        let { pageNumber } = req.params;
+        let { pageNumber, search = "" } = req.params;
         let { filter = ["Pending", "Accepted", "Rejected"] } = req.body;
-
         let perPage = 10;
         let skip = (Number(pageNumber) - 1) * perPage;
 
-        let events = await Event.find({ $or: filter.map((e: String) => { return { status: e } }) })
+        let events = await Event.find({ name: { $regex: search, $options: 'i' }, $or: filter.map((e: String) => { return { status: e } }) })
             .sort({ createAt: 1 }).skip(skip).limit(perPage).populate("supportRequestId").lean();
 
         let resData = {
@@ -147,8 +146,8 @@ export async function getGroupContributesOfEvent(req: Request, res: Response) {
 
         let groupContributes = await GroupContribute.find({ eventId, $or: filter.map((e: String) => { return { status: e } }) })
             .sort({ createAt: 1 }).skip(skip).limit(perPage)
-            .populate({ path: "accountId", select: "imageId", options: { as: 'account' } })
-            .populate({ path: "eventId", select: "imageIds", options: { as: 'event' } })
+            .populate("accountId")
+            .populate("eventId")
             .lean();
 
         let resData = {
@@ -168,8 +167,8 @@ export async function getGroupContribute(req: Request, res: Response) {
     try {
         let { groupContributeId } = req.params;
         let groupContribute = await GroupContribute.findById(groupContributeId)
-            .populate({ path: "accountId", select: "imageId", options: { as: 'account' } })
-            .populate({ path: "eventId", select: "imageIds", options: { as: 'event' } })
+            .populate("accountId")
+            .populate("eventId")
             .lean();
 
         if (groupContribute == null) throw new Error("Group contribute is not existed")

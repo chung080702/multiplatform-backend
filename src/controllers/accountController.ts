@@ -73,8 +73,8 @@ export async function getGroupContributesOfAccount(req: Request, res: Response) 
 
         let groupContributes = await GroupContribute.find({ accountId, $or: filter.map((e: String) => { return { status: e } }) })
             .sort({ createAt: 1 }).skip(skip).limit(perPage)
-            .populate({ path: "accountId", select: "imageId", options: { as: 'account' } })
-            .populate({ path: "eventId", select: "imageIds", options: { as: 'event' } })
+            .populate("accountId")
+            .populate("eventId")
             .lean();
 
         let resData = {
@@ -100,8 +100,8 @@ export async function getPersonalContributesOfAccount(req: Request, res: Respons
 
         let groupContributes = await PersonalContribute.find({ accountId, $or: filter.map((e: String) => { return { status: e } }) })
             .sort({ createAt: 1 }).skip(skip).limit(perPage)
-            .populate({ path: "accountId", select: "imageId", options: { as: 'account' } })
-            .populate({ path: "supportRequestId", select: "imageIds", options: { as: 'supportRequest' } })
+            .populate("accountId")
+            .populate("supportRequestId")
             .lean();
 
         let resData = {

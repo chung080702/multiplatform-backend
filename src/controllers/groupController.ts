@@ -7,7 +7,7 @@ import { SupportRequest } from "../models/supportRequest.js";
 
 export async function getGroupsOfUser(req: Request, res: Response) {
     try {
-        let { pageNumber, accountId } = req.params;
+        let { pageNumber, accountId, search = "" } = req.params;
         let perPage = 10;
         let skip = (Number(pageNumber) - 1) * perPage;
         let groups = await Group.aggregate([
@@ -37,7 +37,8 @@ export async function getGroupsOfUser(req: Request, res: Response) {
             },
             {
                 $match: {
-                    'membership': { $ne: [] }
+                    'membership': { $ne: [] },
+                    'name': { $regex: search, $options: 'i' },
                 }
             },
             {
@@ -63,7 +64,7 @@ export async function getGroupsOfUser(req: Request, res: Response) {
 
 export async function getGroups(req: Request, res: Response) {
     try {
-        let { pageNumber } = req.params;
+        let { pageNumber, search = "" } = req.params;
         let { username } = req.body;
         let perPage = 10;
         let skip = (Number(pageNumber) - 1) * perPage;
@@ -90,6 +91,11 @@ export async function getGroups(req: Request, res: Response) {
                             }
                         }
                     }
+                }
+            },
+            {
+                $match: {
+                    'name': { $regex: search, $options: 'i' },
                 }
             },
             {
@@ -134,7 +140,7 @@ export async function createGroup(req: Request, res: Response) {
     try {
         let { username } = req.body;
 
-        let group = new Group({ ...req.body });
+        let group = new Group({ memberNumber: 1, ...req.body });
         await group.save();
 
         let membership = new Membership({
@@ -238,7 +244,7 @@ export async function getJoinGroupRequests(req: Request, res: Response) {
         if (!await checkAdminGroup(username, groupId)) throw new Error("Permission denied");
 
         let joinRequests = await Membership.find({ groupId: groupId, status: "Pending" }).sort({ createAt: 1 })
-            .skip(skip).limit(perPage).populate({ path: "accountId", select: "imageId", options: { as: 'account' } }).lean();
+            .skip(skip).limit(perPage).populate("accountId").lean();
 
         let resData = {
             joinRequests
@@ -411,7 +417,7 @@ export async function getMembers(req: Request, res: Response) {
         let perPage = 10;
         let skip = (Number(pageNumber) - 1) * perPage;
         let members = await Membership.find({ groupId }).sort({ createAt: 1 }).skip(skip).limit(perPage)
-            .populate({ path: "accountId", select: "imageId", options: { as: 'account' } }).lean();
+            .populate("accountId").lean();
 
         let resData = {
             members
@@ -430,7 +436,7 @@ export async function getMember(req: Request, res: Response) {
     try {
         let { groupId, memberId } = req.params;
 
-        let member = await Membership.findOne({ groupId, accountId: memberId }).populate({ path: "accountId", select: "imageId", options: { as: 'account' } }).lean();
+        let member = await Membership.findOne({ groupId, accountId: memberId }).populate("accountId").lean();
 
         let resData = {
             member

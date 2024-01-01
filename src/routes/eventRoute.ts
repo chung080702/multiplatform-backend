@@ -13,7 +13,7 @@ export class EventRoutes {
     }
 
     routers(): void {
-        this.router.get("/page/:pageNumber", getEvents);
+        this.router.get("/page/:pageNumber/search/:search?", getEvents);
         this.router.get("/:eventId", getEvent);
         this.router.post("/:eventId", acceptEvent);
         this.router.delete("/:eventId", rejectEvent);

@@ -38,6 +38,7 @@ export async function getGroupsOfUser(req: Request, res: Response) {
             {
                 $match: {
                     'membership': { $ne: [] },
+                    'membership.0.status': { $eq: 'Accepted' },
                     'name': { $regex: search, $options: 'i' },
                 }
             },
@@ -68,6 +69,66 @@ export async function getGroups(req: Request, res: Response) {
         let { username } = req.body;
         let perPage = 10;
         let skip = (Number(pageNumber) - 1) * perPage;
+
+        let groups = await Group.aggregate([
+            {
+                $lookup: {
+                    from: 'memberships',
+                    localField: '_id',
+                    foreignField: 'groupId',
+                    as: 'membership'
+                },
+
+            },
+            {
+                $addFields: {
+                    membership: {
+                        $filter: {
+                            input: '$membership',
+                            as: 'm',
+                            cond: {
+                                $and: [
+                                    { $eq: ['$$m.accountId', username] }
+                                ]
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                $match: {
+                    'name': { $regex: search, $options: 'i' }
+                }
+
+            },
+            {
+                $skip: skip
+            },
+            {
+                $limit: perPage
+            }
+        ]);
+
+        let resData = {
+            groups
+        }
+        logger.info(resData);
+
+        res.status(200).send(resData);
+    }
+    catch (e: any) {
+        logger.error(e);
+        res.status(400).send(e?.message);
+    }
+}
+
+export async function getPendingGroups(req: Request, res: Response) {
+    try {
+        let { pageNumber, search = "" } = req.params;
+        let { username } = req.body;
+        let perPage = 10;
+        let skip = (Number(pageNumber) - 1) * perPage;
+
         let groups = await Group.aggregate([
             {
                 $lookup: {
@@ -96,7 +157,82 @@ export async function getGroups(req: Request, res: Response) {
             {
                 $match: {
                     'name': { $regex: search, $options: 'i' },
+
+
+
+                    'membership.0.status': { $eq: 'Pending' }
+
+
+
                 }
+
+            },
+            {
+                $skip: skip
+            },
+            {
+                $limit: perPage
+            }
+        ]);
+
+        let resData = {
+            groups
+        }
+        logger.info(resData);
+
+        res.status(200).send(resData);
+    }
+    catch (e: any) {
+        logger.error(e);
+        res.status(400).send(e?.message);
+    }
+}
+
+export async function getNoneGroups(req: Request, res: Response) {
+    try {
+        let { pageNumber, search = "" } = req.params;
+        let { username } = req.body;
+        let perPage = 10;
+        let skip = (Number(pageNumber) - 1) * perPage;
+
+        let groups = await Group.aggregate([
+            {
+                $lookup: {
+                    from: 'memberships',
+                    localField: '_id',
+                    foreignField: 'groupId',
+                    as: 'membership'
+                },
+
+            },
+            {
+                $addFields: {
+                    membership: {
+                        $filter: {
+                            input: '$membership',
+                            as: 'm',
+                            cond: {
+                                $and: [
+                                    { $eq: ['$$m.accountId', username] }
+                                ]
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                $match: {
+                    'name': { $regex: search, $options: 'i' },
+                    $or: [
+                        { 'membership': { $eq: [] } },
+                        { 'membership.0.status': { $eq: 'Rejected' } }
+                    ]
+
+
+
+
+                }
+
             },
             {
                 $skip: skip
@@ -122,9 +258,16 @@ export async function getGroups(req: Request, res: Response) {
 export async function getGroup(req: Request, res: Response) {
     try {
         let { groupId } = req.params;
-        let groups = await Group.findById(groupId).lean();
+        let { username } = req.body;
+
+        let group = await Group.findById(groupId).lean();
+        let membership = await Membership.findOne({ groupId, accountId: username }).lean();
+
         let resData = {
-            groups
+            group: {
+                ...group,
+                membership: membership === null ? [] : [membership]
+            }
         }
         logger.info(resData);
 
@@ -146,7 +289,8 @@ export async function createGroup(req: Request, res: Response) {
         let membership = new Membership({
             accountId: username,
             groupId: group._id,
-            role: "Admin"
+            role: "Admin",
+            status: "Accepted"
         })
         await membership.save();
 
@@ -213,6 +357,7 @@ export async function joinGroup(req: Request, res: Response) {
         if (membership === null) membership = new Membership({
             accountId: username,
             groupId: group._id,
+            role: 'Member',
             status: "Pending"
         })
 
@@ -385,7 +530,9 @@ export async function deleteMember(req: Request, res: Response) {
         let { username } = req.body;
         let { memberId, groupId } = req.params;
 
-        if (!await checkAdminGroup(username, groupId) || await checkAdminGroup(memberId, groupId)) throw new Error("Permission denied");
+        if ((!await checkAdminGroup(username, groupId) || await checkAdminGroup(memberId, groupId)) && (memberId != username)) throw new Error("Permission denied");
+
+        let membership = await Membership.findOne({ groupId, accountId: memberId })
 
         await Membership.deleteOne({ groupId, accountId: memberId });
 
@@ -393,7 +540,8 @@ export async function deleteMember(req: Request, res: Response) {
 
         if (group == null) throw new Error("Group is not existed");
 
-        group.memberNumber = group.memberNumber - 1;
+        if (membership?.status == 'Accepted')
+            group.memberNumber = group.memberNumber - 1;
 
         await group.save();
 
@@ -410,13 +558,14 @@ export async function deleteMember(req: Request, res: Response) {
     }
 }
 
+
 export async function getMembers(req: Request, res: Response) {
     try {
         let { groupId, pageNumber } = req.params;
 
         let perPage = 10;
         let skip = (Number(pageNumber) - 1) * perPage;
-        let members = await Membership.find({ groupId }).sort({ createAt: 1 }).skip(skip).limit(perPage)
+        let members = await Membership.find({ groupId, status: 'Accepted' }).sort({ createAt: 1 }).skip(skip).limit(perPage)
             .populate("accountId").lean();
 
         let resData = {

@@ -66,12 +66,11 @@ export async function updateAccount(req: Request, res: Response) {
 export async function getGroupContributesOfAccount(req: Request, res: Response) {
     try {
         let { pageNumber, accountId } = req.params;
-        let { filter = ["Pending", "Accepted", "Rejected"] } = req.body;
 
         let perPage = 10;
         let skip = (Number(pageNumber) - 1) * perPage;
 
-        let groupContributes = await GroupContribute.find({ accountId, $or: filter.map((e: String) => { return { status: e } }) })
+        let groupContributes = await GroupContribute.find({ accountId })
             .sort({ createAt: 1 }).skip(skip).limit(perPage)
             .populate("accountId")
             .populate("eventId")
@@ -89,6 +88,34 @@ export async function getGroupContributesOfAccount(req: Request, res: Response) 
         res.status(400).send(e?.message);
     }
 }
+
+
+export async function getAcceptedGroupContributesOfAccount(req: Request, res: Response) {
+    try {
+        let { pageNumber, accountId } = req.params;
+
+        let perPage = 10;
+        let skip = (Number(pageNumber) - 1) * perPage;
+
+        let groupContributes = await GroupContribute.find({ accountId, status: "Accepted" })
+            .sort({ createAt: 1 }).skip(skip).limit(perPage)
+            .populate("accountId")
+            .populate("eventId")
+            .lean();
+
+        let resData = {
+            groupContributes
+        }
+        logger.info(resData);
+
+        res.status(200).send(resData);
+    }
+    catch (e: any) {
+        logger.error(e);
+        res.status(400).send(e?.message);
+    }
+}
+
 
 export async function getPersonalContributesOfAccount(req: Request, res: Response) {
     try {
@@ -116,3 +143,4 @@ export async function getPersonalContributesOfAccount(req: Request, res: Respons
         res.status(400).send(e?.message);
     }
 }
+

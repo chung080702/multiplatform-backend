@@ -2,15 +2,16 @@ import { Request, Response } from "express";
 import logger from "../logger.js";
 import { SupportRequest } from "../models/supportRequest.js";
 import { PersonalContribute } from "../models/contribute.js";
+import { Event } from "../models/event.js";
 
 export async function getSupportRequets(req: Request, res: Response) {
     try {
         let { pageNumber, search = "" } = req.params;
-        let { filter = ["Pending", "Accepted", "Rejected"] } = req.body;
+
         let perPage = 10;
         let skip = (Number(pageNumber) - 1) * perPage;
 
-        let supportRequests = await SupportRequest.find({ title: { $regex: search, $options: 'i' }, $or: filter.map((e: String) => { return { status: e } }) })
+        let supportRequests = await SupportRequest.find({ title: { $regex: search, $options: 'i' } })
             .sort({ createAt: 1 }).skip(skip).limit(perPage)
             .populate("accountId").lean();
 
@@ -26,6 +27,31 @@ export async function getSupportRequets(req: Request, res: Response) {
         res.status(400).send(e?.message);
     }
 }
+
+export async function getPendingSupportRequets(req: Request, res: Response) {
+    try {
+        let { pageNumber, search = "" } = req.params;
+
+        let perPage = 10;
+        let skip = (Number(pageNumber) - 1) * perPage;
+
+        let supportRequests = await SupportRequest.find({ title: { $regex: search, $options: 'i' }, status: 'Pending' })
+            .sort({ createAt: 1 }).skip(skip).limit(perPage)
+            .populate("accountId").lean();
+
+        let resData = {
+            supportRequests
+        }
+        logger.info(resData);
+
+        res.status(200).send(resData);
+    }
+    catch (e: any) {
+        logger.error(e);
+        res.status(400).send(e?.message);
+    }
+}
+
 
 export async function getSupportRequetsOfUser(req: Request, res: Response) {
     try {
@@ -266,9 +292,9 @@ export async function acceptPersonalContribute(req: Request, res: Response) {
         if (supportRequest == null) throw new Error("You are not owner of support request")
 
 
-        supportRequest.status = "Accepted";
+        personalContribute.status = "Accepted";
 
-        await supportRequest.save();
+        await personalContribute.save();
 
         let resData = {
         }
@@ -297,13 +323,40 @@ export async function rejectPersonalContribute(req: Request, res: Response) {
         if (supportRequest == null) throw new Error("You are not owner of support request")
 
 
-        supportRequest.status = "Rejected";
+        personalContribute.status = "Rejected";
 
-        await supportRequest.save();
+        await personalContribute.save();
 
         let resData = {
         }
 
+        logger.info(resData);
+
+        res.status(200).send(resData);
+    }
+    catch (e: any) {
+        logger.error(e);
+        res.status(400).send(e?.message);
+    }
+}
+
+export async function getEventsOfSupportRequest(req: Request, res: Response) {
+    try {
+        let { pageNumber, supportRequestId } = req.params;
+        let { filter = ["Pending", "Accepted", "Rejected"] } = req.body;
+
+        let perPage = 10;
+        let skip = (Number(pageNumber) - 1) * perPage;
+
+        let events = await Event.find({ supportRequestId, $or: filter.map((e: String) => { return { status: e } }) })
+            .sort({ createAt: 1 }).skip(skip).limit(perPage)
+            .populate("groupId")
+            .populate("supportRequestId")
+            .lean();
+
+        let resData = {
+            events
+        }
         logger.info(resData);
 
         res.status(200).send(resData);

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { uploadFile, uploadFiles } from "../controllers/imageController.js";
-import { acceptJoinGroup, createEvent, createGroup, deleteMember, getEventsOfGroup, getGroup, getGroups, getGroupsOfUser, getJoinGroupRequest, getJoinGroupRequestOfUser, getJoinGroupRequests, getMember, getMembers, joinGroup, rejectJoinGroup, updateEvent, updateGroup, updateMember } from "../controllers/groupController.js";
+import { acceptJoinGroup, createEvent, createGroup, deleteMember, getEventsOfGroup, getGroup, getGroups, getGroupsOfUser, getJoinGroupRequest, getJoinGroupRequestOfUser, getJoinGroupRequests, getMember, getMembers, getNoneGroups, getPendingGroups, joinGroup, rejectJoinGroup, updateEvent, updateGroup, updateMember } from "../controllers/groupController.js";
 import { authenticateToken } from "../controllers/authenController.js";
 
 
@@ -15,8 +15,10 @@ export class GroupRoutes {
     routers(): void {
         this.router.post("/", uploadFile, authenticateToken, createGroup);
         this.router.put("/:groupId", uploadFile, authenticateToken, updateGroup);
-        this.router.get("/:groupId", getGroup);
+        this.router.get("/:groupId", authenticateToken, getGroup);
         this.router.get("/page/:pageNumber/search/:search?", authenticateToken, getGroups);
+        this.router.get("/page/:pageNumber/pending/search/:search?", authenticateToken, getPendingGroups);
+        this.router.get("/page/:pageNumber/none/search/:search?", authenticateToken, getNoneGroups);
         this.router.get("/user/:accountId/page/:pageNumber/search/:search?", getGroupsOfUser);
         this.router.post("/:groupId/join", joinGroup);
         this.router.put("/:groupId/join/:joinRequestId", acceptJoinGroup);

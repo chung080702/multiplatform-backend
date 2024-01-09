@@ -7,11 +7,34 @@ import { GroupContribute } from "../models/contribute.js";
 export async function getEvents(req: Request, res: Response) {
     try {
         let { pageNumber, search = "" } = req.params;
-        let { filter = ["Pending", "Accepted", "Rejected"] } = req.body;
+
         let perPage = 10;
         let skip = (Number(pageNumber) - 1) * perPage;
 
-        let events = await Event.find({ name: { $regex: search, $options: 'i' }, $or: filter.map((e: String) => { return { status: e } }) })
+        let events = await Event.find({ name: { $regex: search, $options: 'i' } })
+            .sort({ createAt: 1 }).skip(skip).limit(perPage).populate("supportRequestId").lean();
+
+        let resData = {
+            events
+        }
+        logger.info(resData);
+
+        res.status(200).send(resData);
+    }
+    catch (e: any) {
+        logger.error(e);
+        res.status(400).send(e?.message);
+    }
+}
+
+export async function getPendingEvents(req: Request, res: Response) {
+    try {
+        let { pageNumber, search = "" } = req.params;
+
+        let perPage = 10;
+        let skip = (Number(pageNumber) - 1) * perPage;
+
+        let events = await Event.find({ name: { $regex: search, $options: 'i' }, status: 'Pending' })
             .sort({ createAt: 1 }).skip(skip).limit(perPage).populate("supportRequestId").lean();
 
         let resData = {
@@ -152,6 +175,190 @@ export async function getGroupContributesOfEvent(req: Request, res: Response) {
 
         let resData = {
             groupContributes
+        }
+        logger.info(resData);
+
+        res.status(200).send(resData);
+    }
+    catch (e: any) {
+        logger.error(e);
+        res.status(400).send(e?.message);
+    }
+}
+
+
+export async function getNotJoinEvents(req: Request, res: Response) {
+    try {
+        let { pageNumber, search = "" } = req.params;
+        let { username } = req.body;
+        let perPage = 10;
+        let skip = (Number(pageNumber) - 1) * perPage;
+
+        let events = await Event.aggregate([
+            {
+                $lookup: {
+                    from: 'group contributes',
+                    localField: '_id',
+                    foreignField: 'eventId',
+                    as: 'groupContributes'
+                },
+
+            },
+            {
+                $addFields: {
+                    groupContributes: {
+                        $filter: {
+                            input: '$groupContributes',
+                            as: 'm',
+                            cond: {
+                                $and: [
+                                    { $eq: ['$$m.accountId', username] }
+                                ]
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                $match: {
+                    'name': { $regex: search, $options: 'i' },
+                    'status': { $eq: 'Accepted' },
+                    'groupContributes': { $eq: [] }
+                }
+
+            },
+            {
+                $skip: skip
+            },
+            {
+                $limit: perPage
+            }
+        ]);
+
+        let resData = {
+            events
+        }
+        logger.info(resData);
+
+        res.status(200).send(resData);
+    }
+    catch (e: any) {
+        logger.error(e);
+        res.status(400).send(e?.message);
+    }
+}
+
+export async function getPendingJoinEvents(req: Request, res: Response) {
+    try {
+        let { pageNumber, search = "" } = req.params;
+        let { username } = req.body;
+        let perPage = 10;
+        let skip = (Number(pageNumber) - 1) * perPage;
+
+        let events = await Event.aggregate([
+            {
+                $lookup: {
+                    from: 'group contributes',
+                    localField: '_id',
+                    foreignField: 'eventId',
+                    as: 'groupContributes'
+                },
+
+            },
+            {
+                $addFields: {
+                    groupContributes: {
+                        $filter: {
+                            input: '$groupContributes',
+                            as: 'm',
+                            cond: {
+                                $and: [
+                                    { $eq: ['$$m.accountId', username] }
+                                ]
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                $match: {
+                    'name': { $regex: search, $options: 'i' },
+                    'status': { $eq: 'Accepted' },
+                    'groupContributes.0.status': { $eq: 'Pending' }
+                }
+
+            },
+            {
+                $skip: skip
+            },
+            {
+                $limit: perPage
+            }
+        ]);
+
+        let resData = {
+            events
+        }
+        logger.info(resData);
+
+        res.status(200).send(resData);
+    }
+    catch (e: any) {
+        logger.error(e);
+        res.status(400).send(e?.message);
+    }
+}
+
+export async function getAcceptedJoinEvents(req: Request, res: Response) {
+    try {
+        let { pageNumber, search = "" } = req.params;
+        let { username } = req.body;
+        let perPage = 10;
+        let skip = (Number(pageNumber) - 1) * perPage;
+
+        let events = await Event.aggregate([
+            {
+                $lookup: {
+                    from: 'group contributes',
+                    localField: '_id',
+                    foreignField: 'eventId',
+                    as: 'groupContributes'
+                },
+
+            },
+            {
+                $addFields: {
+                    groupContributes: {
+                        $filter: {
+                            input: '$groupContributes',
+                            as: 'm',
+                            cond: {
+                                $and: [
+                                    { $eq: ['$$m.accountId', username] }
+                                ]
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                $match: {
+                    'name': { $regex: search, $options: 'i' },
+                    'status': { $eq: 'Accepted' },
+                    'groupContributes.0.status': { $eq: 'Accepted' }
+                }
+
+            },
+            {
+                $skip: skip
+            },
+            {
+                $limit: perPage
+            }
+        ]);
+
+        let resData = {
+            events
         }
         logger.info(resData);
 
